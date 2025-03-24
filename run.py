@@ -2,7 +2,7 @@ import os
 import time
 import filetype
 import logging
-import json
+import hashlib
 import requests
 from mutagen import id3, mp4
 
@@ -27,6 +27,11 @@ def convert_uc_to_music(uc_file_path):
         arr[i] = arr[i] ^ 0xA3
 
     uc_file_name = os.path.basename(uc_file_path)
+    md5 = uc_file_name.rsplit("-", 1)[1][:-3]
+    if md5 != hashlib.md5(arr).hexdigest():
+        logging.warning(f"Waitting cache [{uc_file_name}] ...")
+        return None
+
     kind = filetype.guess(arr)
     if kind is None:
         file_path = os.path.join(MUSIC_DIR, uc_file_name[:-2] + "unknown")
@@ -127,45 +132,20 @@ def save_history(history):
             f.write(item + "\n")
 
 
-def is_in_history(history, uc_file_name):
-    id = uc_file_name.split("-")[0]
-    return id in history
-
-
-def add_to_history(history, uc_file_name):
-    id = uc_file_name.split("-")[0]
-    history.add(id)
-
-
-def is_uc_file_valid(uc_file_path):
-    idx_file_path = uc_file_path[:-2] + "idx"
-    if not os.path.exists(idx_file_path):
-        return False
-
-    with open(idx_file_path, "r") as f:
-        idx_str = f.read()
-
-    idx_json = json.loads(idx_str)
-    if "size" not in idx_json:
-        return False
-
-    return os.path.getsize(uc_file_path) == int(idx_json["size"])
-
-
 logging.info(f"Start monitoring {CACHE_PATH} ...")
 history = load_history()
 while True:
     try:
         uc_files = [file for file in os.listdir(CACHE_PATH) if file.endswith(".uc")]
         for uc_file_name in uc_files:
-            if is_in_history(history, uc_file_name):
+            if uc_file_name in history:
                 continue
             uc_file_path = os.path.join(CACHE_PATH, uc_file_name)
-            if not is_uc_file_valid(uc_file_path):
-                continue
             music_file_path = convert_uc_to_music(uc_file_path)
+            if music_file_path is None:
+                continue
             get_music_info(music_file_path)
-            add_to_history(history, uc_file_name)
+            history.add(uc_file_name)
             save_history(history)
         time.sleep(1)
     except KeyboardInterrupt:

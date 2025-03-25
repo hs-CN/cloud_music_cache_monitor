@@ -29,7 +29,7 @@ def convert_uc_to_music(uc_file_path):
     uc_file_name = os.path.basename(uc_file_path)
     md5 = uc_file_name.rsplit("-", 1)[1][:-3]
     if md5 != hashlib.md5(arr).hexdigest():
-        logging.warning(f"Waitting cache [{uc_file_name}] ...")
+        logging.info(f"Waitting cache [{uc_file_name}] ...")
         return None
 
     kind = filetype.guess(arr)

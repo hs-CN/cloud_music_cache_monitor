@@ -29,7 +29,7 @@ def convert_uc_to_music(uc_file_path):
     uc_file_name = os.path.basename(uc_file_path)
     md5 = uc_file_name.rsplit("-", 1)[1][:-3]
     if md5 != hashlib.md5(arr).hexdigest():
-        logging.info(f"Waitting [{uc_file_name}] ...")
+        logging.info(f"Waiting [{uc_file_name}] ...")
         return None
 
     kind = filetype.guess(arr)
@@ -110,11 +110,21 @@ def get_music_info(file_path):
                 audio.save()
 
     file_ext = os.path.splitext(file_path)[1]
-    new_file_name = f"{music_name} - {music_artists}{file_ext}"
+    new_file_name = good_file_name(f"{music_name} - {music_artists}{file_ext}")
     new_file = os.path.join(MUSIC_DIR, new_file_name)
     os.rename(file_path, new_file)
     logging.info(f"Rename to [{new_file_name}]")
     return new_file
+
+
+def good_file_name(filename: str):
+    # Windows 不允许的字符
+    invalid_chars = r'[\/:*?"<>|]'
+    for char in invalid_chars:
+        filename = filename.replace(char, "")
+
+    filename = filename.strip()
+    return filename
 
 
 def load_history():

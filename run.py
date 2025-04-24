@@ -112,6 +112,13 @@ def get_music_info(file_path):
     file_ext = os.path.splitext(file_path)[1]
     new_file_name = good_file_name(f"{music_name} - {music_artists}{file_ext}")
     new_file = os.path.join(MUSIC_DIR, new_file_name)
+    count = 0
+    while os.path.exists(new_file):
+        count += 1
+        new_file_name = good_file_name(
+            f"{music_name} - {music_artists}_{count}{file_ext}"
+        )
+        new_file = os.path.join(MUSIC_DIR, new_file_name)
     os.rename(file_path, new_file)
     logging.info(f"Rename to [{new_file_name}]")
     return new_file
